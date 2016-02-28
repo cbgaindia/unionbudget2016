@@ -88,10 +88,9 @@ p {
   -moz-box-shadow: 0px 0px 15px #CCC;
   box-shadow: 0px 0px 15px #CCC;
 }
-#content-wrapper {
-  padding-top: 100px;
-  padding-left: 0px;
-  padding-right: 0px;
+
+#content {
+  padding-top: 60px;
 }
 
 
