@@ -45,15 +45,17 @@ function loadDatasets(){
     var table_data = {};
     queue()
         .defer(d3.csv, "data/table_list.csv")
+        .defer(d3.csv, "data/ministry_of_tribal_affairs.csv")
         .defer(d3.csv, "data/composition_and_structure_of_transfer_of_resources_to_states.csv")
         .defer(d3.csv, "data/social_sector_expenditures_by_union_government.csv")
         .defer(d3.csv, "data/social_sector_expenditure_as_share_of_aggregate_disbursements_by_states.csv")
         .await(populateTableData);
         //.await(drawViz(table_list, composition_and_structure_of_transfer_of_resources_to_states));
-    function populateTableData(error, table_list, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
-        table_data["composition_and_structure_of_transfer_of_resources_to_states"] = composition_and_structure_of_transfer_of_resources_to_states
-        table_data["social_sector_expenditures_by_union_government"] = social_sector_expenditures_by_union_government
-        table_data["social_sector_expenditure_as_share_of_aggregate_disbursements_by_states"] = social_sector_expenditure_as_share_of_aggregate_disbursements_by_states
+    function populateTableData(error, table_list, ministry_of_tribal_affairs, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
+        table_data["ministry_of_tribal_affairs"] = ministry_of_tribal_affairs;
+        table_data["composition_and_structure_of_transfer_of_resources_to_states"] = composition_and_structure_of_transfer_of_resources_to_states;
+        table_data["social_sector_expenditures_by_union_government"] = social_sector_expenditures_by_union_government;
+        table_data["social_sector_expenditure_as_share_of_aggregate_disbursements_by_states"] = social_sector_expenditure_as_share_of_aggregate_disbursements_by_states;
         populateNavPanel(table_list, table_data);
     }
     function drawViz(table_list, table_data){
@@ -88,7 +90,8 @@ function populateNavPanel(table_list, table_data) {
             parentMetric=(typeof $(this).attr("parent")==="undefined")?null:$(this).attr("parent");
             //getSource(source_data,currentMetric);
             changeDataViz(currentMetric, parentMetric, table_data);
-            $(this).parent().addClass("selected").siblings().removeClass("selected");
+            $(".selected").removeClass("selected");
+            $(this).parent().addClass("selected");
             $("#legend-panel").show();
             $("#details p.lead").show();
         }
@@ -112,22 +115,44 @@ function removeNarrative() {
 
 function changeDataViz(index_id, parent_id, table_data){
     $("#content").html(""); 
-    $(".unit").html("Unit: " + table_data[parent_id][index_id]["unit"]); 
-    $("#visualized-measure").html(table_data[parent_id][index_id]["index_name"]);
-    $("#source-title").html("<i>Source:</i> " + table_data[parent_id][index_id]["source"]);
-    index = parseInt(index_id);
-    skip_keys = {"index_id":0, "index_name":0, "unit":0, "insights":0, "parent":0, "source":0}
+    selected_table_data = table_data[parent_id][index_id]; 
+    $(".unit").html("Unit: " + selected_table_data["unit"]); 
+    $("#visualized-measure").html(selected_table_data["index_name"]);
+    $("#source-title").html("<i>Source:</i> " + selected_table_data["source"]);
+    skip_keys = {"index_id":0, "index_name":0, "unit":0, "insights":0, "parent":0, "source":0, "viz_type":0, "alias":0}
     chart_data = []
-    for (var key in table_data[parent_id][index]){
-        if(!(key in skip_keys)){
-            data_value = table_data[parent_id][index][key]
-            if(data_value.indexOf('.') === -1){  
-                chart_data.push({"key":key, "value":parseInt(data_value, 10)}); 
-            }else{
-                chart_data.push({"key":key, "value":parseFloat(data_value, 10)}); 
+    for (var key in selected_table_data){
+        if(!(key in skip_keys) && (key.indexOf('%') === -1)){
+            var chart_data_row = {};
+            data_value = selected_table_data[key];
+            if ((data_value.match(/[0-9]/))){   
+                if(data_value.indexOf('.') === -1){  
+                    chart_data_row = {"key":key, "value":parseInt(data_value, 10)}; 
+                }else{
+                    chart_data_row = {"key":key, "value":parseFloat(data_value, 10)}; 
+                }
+            }
+            key_perc = key + "%";
+            if(key in selected_table_data){
+                data_value = selected_table_data[key_perc];
+                chart_data_row["value_perc"] = parseFloat(data_value, 10);   
+            } 
+            if(!(_.isEmpty(chart_data_row))){
+                chart_data.push(chart_data_row);
             }
         }
     }
+    if((!("viz_type") in selected_table_data) || typeof selected_table_data["viz_type"] === 'undefined' || selected_table_data["viz_type"].trim() == ""){
+         selected_table_data["viz_type"] = "simple_bar";
+    }
+    index_name = selected_table_data["index_name"]; 
+    if("alias" in selected_table_data){
+        index_name = selected_table_data["alias"]; 
+    }  
+    this[selected_table_data["viz_type"]](chart_data, index_name, selected_table_data["unit"]);
+}
+
+function simple_bar(chart_data, index_name, unit){
     var vertical_pad = 50; 
     var margin = {top: 20, right: 0, bottom: 20, left: 0},
         width = 700 - margin.left - margin.right,
@@ -197,6 +222,156 @@ function changeDataViz(index_id, parent_id, table_data){
     .attr("font-family", "sans-serif") 
     .attr("font-size", "14px")
     .attr("fill", "Black");
-
-    console.log(chart_data);
 }
+
+function simple_bar_with_line(chart_data, index_name, unit){
+    var vertical_pad = 50; 
+    var margin = {top: 20, right: 40, bottom: 20, left: 40},
+        width = 800 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+    var xScale = d3.scale.ordinal()
+        .domain(d3.range(chart_data.length))
+        .rangeRoundBands([margin.left, width-margin.right], 0.5, 0.25); 
+    var yScale1 = d3.scale.linear()
+        .domain([0, d3.max(chart_data, function(d) {return d.value;})])
+        .range([height-vertical_pad, 0]);
+    var yScale2 = d3.scale.linear()
+        .domain([0, d3.max(chart_data, function(d) {return d.value_perc;})])
+        .range([height-vertical_pad, 0]);
+    var yAxis1 = d3.svg.axis()
+        .scale(yScale1)
+        .orient("left");
+    var yAxis2 = d3.svg.axis()
+        .scale(yScale2)
+        .orient("right");
+    var line = d3.svg.line()
+        .x(function(d, i) { return xScale(i) + xScale.rangeBand()/2 + margin.left})
+        .y(function(d) { return yScale2(d.value_perc) + vertical_pad/2;});
+    var key = function(d) {
+            return d.key;
+    };
+    var svg = d3.select("#content")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom + vertical_pad);
+    svg.selectAll("rect")
+        .data(chart_data, key)
+        .enter()
+        .append("rect")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .attr("x", function(d, i) {
+            return xScale(i);
+        })
+        .attr("y", function(d) {
+            return yScale1(d.value);
+        //return height - yScale1(d.value) - vertical_pad;
+        })
+        .attr("width", xScale.rangeBand())
+        .attr("height", function(d) {
+            return height - yScale1(d.value) - vertical_pad;
+            return yScale1(d.value);
+        })
+        .attr("fill", function(d) {
+            return "#08519c";
+    })
+
+    svg.append("path")
+        .datum(chart_data)
+        .attr("class", "line")
+        .attr("d", line)
+        .attr("fill", "none")
+        .attr("stroke", "#74c476")
+        .attr("stroke-width", 5)
+        .attr("stroke-linecap", "round")
+        .attr("stroke-dasharray", ("1, 10"))
+        .attr("shape-rendering", "optimizeSpeed");
+    
+    svg.selectAll("circle.line")
+        .data(chart_data)
+        .enter().append("svg:circle")
+        .attr("class", "line")
+        .style("fill", "#74c476")
+        .attr("cx", line.x())
+        .attr("cy", line.y())
+        .attr("r", 8);
+   
+    var texts = svg.selectAll("text")
+        .data(chart_data)
+        .enter();
+
+    texts.append("text")
+        .text(function(d) {
+            return d.value;
+        })
+    .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+            return xScale(i) + xScale.rangeBand()/2 + margin.left;
+        })
+    .attr("y", function(d) {
+        return yScale1(d.value) + vertical_pad;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-size", "14px")
+    .attr("fill", "white");
+
+    texts.append("text")
+        .text(function(d) {
+            return d.value_perc;
+        })
+    .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+            return xScale(i) + xScale.rangeBand()/2 + margin.left;
+        })
+    .attr("y", function(d) {
+        return yScale2(d.value_perc) + vertical_pad/4;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-size", "16px")
+    .attr("fill", "Black");
+    
+    texts.append("text")
+        .text(function(d) {
+            return d.key;
+        })
+    .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+            return xScale(i) + xScale.rangeBand()/2 + margin.left;
+        })
+    .attr("y", function(d) {
+        return height;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-size", "16px")
+    .attr("fill", "Black");
+    
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(" + 2*margin.left  + "," + vertical_pad/2.5 + ")")
+        .call(yAxis1);
+    
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0)
+        .attr("x", - height + vertical_pad)
+        .attr("dy", "1em")
+        .attr("fill", "Black")
+        .attr("font-family", "sans-serif") 
+        .attr("font-size", "16px")
+        .text(index_name + " in " + unit.split("and")[0]);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(" + width  + "," + vertical_pad/2.5 + ")")
+        .call(yAxis2);
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", width + margin.right)
+        .attr("x", - height + vertical_pad)
+        .attr("dy", "1em")
+        .attr("fill", "Black")
+        .attr("font-family", "sans-serif") 
+        .attr("font-size", "16px")
+        .text(index_name + " in " + unit.split("and")[1]);
+}
+
