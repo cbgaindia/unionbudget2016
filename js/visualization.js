@@ -46,13 +46,23 @@ function loadDatasets(){
     queue()
         .defer(d3.csv, "data/table_list.csv")
         .defer(d3.csv, "data/ministry_of_tribal_affairs.csv")
+        .defer(d3.csv, "data/ministry_of_social_justice_and_empowerment.csv")
+        .defer(d3.csv, "data/ministry_of_rural_development.csv")
+        .defer(d3.csv, "data/urban_poverty.csv")
+        .defer(d3.csv, "data/education.csv")
+        .defer(d3.csv, "data/health.csv")
         .defer(d3.csv, "data/composition_and_structure_of_transfer_of_resources_to_states.csv")
         .defer(d3.csv, "data/social_sector_expenditures_by_union_government.csv")
         .defer(d3.csv, "data/social_sector_expenditure_as_share_of_aggregate_disbursements_by_states.csv")
         .await(populateTableData);
-        //.await(drawViz(table_list, composition_and_structure_of_transfer_of_resources_to_states));
-    function populateTableData(error, table_list, ministry_of_tribal_affairs, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
+    
+    function populateTableData(error, table_list, ministry_of_tribal_affairs, ministry_of_social_justice_and_empowerment, ministry_of_rural_development, urban_poverty, education, health, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
         table_data["ministry_of_tribal_affairs"] = ministry_of_tribal_affairs;
+        table_data["ministry_of_social_justice_and_empowerment"] = ministry_of_social_justice_and_empowerment;
+        table_data["ministry_of_rural_development"] = ministry_of_rural_development; 
+        table_data["urban_poverty"] = urban_poverty; 
+        table_data["education"] = education;  
+        table_data["health"] = health;  
         table_data["composition_and_structure_of_transfer_of_resources_to_states"] = composition_and_structure_of_transfer_of_resources_to_states;
         table_data["social_sector_expenditures_by_union_government"] = social_sector_expenditures_by_union_government;
         table_data["social_sector_expenditure_as_share_of_aggregate_disbursements_by_states"] = social_sector_expenditure_as_share_of_aggregate_disbursements_by_states;
@@ -76,6 +86,11 @@ function populateNavPanel(table_list, table_data) {
                     field["parent"] = table["id"];
                     field["index_id"] = field_index_id;
                     field["source"] = table["source"];
+                    if(("notes" in field) && field["notes"].match(/[a-z]/i)){
+                        field["notes"] = (table["notes"] + " " + field["notes"]).trim() 
+                    }else{
+                        field["notes"] = table["notes"];
+                    }
                     $menu.append(fieldTemplate(field));
                     field_index_id = field_index_id + 1;
                 });
@@ -118,8 +133,9 @@ function changeDataViz(index_id, parent_id, table_data){
     selected_table_data = table_data[parent_id][index_id]; 
     $(".unit").html("Unit: " + selected_table_data["unit"]); 
     $("#visualized-measure").html(selected_table_data["index_name"]);
-    $("#source-title").html("<i>Source:</i> " + selected_table_data["source"]);
-    skip_keys = {"index_id":0, "index_name":0, "unit":0, "insights":0, "parent":0, "source":0, "viz_type":0, "alias":0}
+    $("#source-title").html("<b>Source:</b> " + selected_table_data["source"]);
+    $("#notes-title").html("<b>Notes:</b> " + selected_table_data["notes"]);
+    skip_keys = {"index_id":0, "index_name":0, "unit":0, "insights":0, "parent":0, "source":0, "viz_type":0, "alias":0, "notes":0}
     chart_data = []
     for (var key in selected_table_data){
         if(!(key in skip_keys) && (key.indexOf('%') === -1)){
@@ -131,13 +147,14 @@ function changeDataViz(index_id, parent_id, table_data){
                 }else{
                     chart_data_row = {"key":key, "value":parseFloat(data_value, 10)}; 
                 }
-            }
-            key_perc = key + "%";
-            if(key in selected_table_data){
-                data_value = selected_table_data[key_perc];
-                chart_data_row["value_perc"] = parseFloat(data_value, 10);   
+                key_perc = key + "%";
+                if(key in selected_table_data){
+                    data_value = selected_table_data[key_perc];
+                    chart_data_row["value_perc"] = parseFloat(data_value, 10);   
+                }
             } 
             if(!(_.isEmpty(chart_data_row))){
+                console.log(chart_data_row);
                 chart_data.push(chart_data_row);
             }
         }
