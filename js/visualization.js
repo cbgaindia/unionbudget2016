@@ -51,18 +51,22 @@ function loadDatasets(){
         .defer(d3.csv, "data/urban_poverty.csv")
         .defer(d3.csv, "data/education.csv")
         .defer(d3.csv, "data/health.csv")
+        .defer(d3.csv, "data/tax_gdp_buoyancy.csv")
+        .defer(d3.csv, "data/annual_estimated_revenue_foregone.csv")
         .defer(d3.csv, "data/composition_and_structure_of_transfer_of_resources_to_states.csv")
         .defer(d3.csv, "data/social_sector_expenditures_by_union_government.csv")
         .defer(d3.csv, "data/social_sector_expenditure_as_share_of_aggregate_disbursements_by_states.csv")
         .await(populateTableData);
     
-    function populateTableData(error, table_list, ministry_of_tribal_affairs, ministry_of_social_justice_and_empowerment, ministry_of_rural_development, urban_poverty, education, health, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
+    function populateTableData(error, table_list, ministry_of_tribal_affairs, ministry_of_social_justice_and_empowerment, ministry_of_rural_development, urban_poverty, education, health, tax_gdp_buoyancy, annual_estimated_revenue_foregone, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
         table_data["ministry_of_tribal_affairs"] = ministry_of_tribal_affairs;
         table_data["ministry_of_social_justice_and_empowerment"] = ministry_of_social_justice_and_empowerment;
         table_data["ministry_of_rural_development"] = ministry_of_rural_development; 
         table_data["urban_poverty"] = urban_poverty; 
         table_data["education"] = education;  
         table_data["health"] = health;  
+        table_data["tax_gdp_buoyancy"] = tax_gdp_buoyancy;  
+        table_data["annual_estimated_revenue_foregone"] = annual_estimated_revenue_foregone;  
         table_data["composition_and_structure_of_transfer_of_resources_to_states"] = composition_and_structure_of_transfer_of_resources_to_states;
         table_data["social_sector_expenditures_by_union_government"] = social_sector_expenditures_by_union_government;
         table_data["social_sector_expenditure_as_share_of_aggregate_disbursements_by_states"] = social_sector_expenditure_as_share_of_aggregate_disbursements_by_states;
@@ -73,44 +77,65 @@ function loadDatasets(){
 }
  
 function populateNavPanel(table_list, table_data) {
-    var categoryTemplate = _.template('<h4 class="hidden-xs"><%- table.name  %></h4><ul class="nav nav-pills nav-stacked layer-toggle-menu hidden-xs <%= table.id  %>-menu"><ul>', {variable: 'table'}),
-        fieldTemplate = _.template('<li><a parent="<%= field.parent  %>" index="<%= field.index_id %>" href="#"><%- field.index_name %></li>', {variable: 'field'});
+    var categoryTemplate = _.template('<h4 class="hidden-xs"><%- table.name  %></h4><ul class="nav nav-pills nav-stacked layer-toggle-menu hidden-xs <%= table.name_id  %>-menu"><ul>', {variable: 'table'}),
+        linearFieldTemplate = _.template('<li><a parent="<%= field.parent  %>" index="<%= field.index_id %>" href="#" field-type="linear"><%- field.index_name %></li>', {variable: 'field'}),
+        transposeFieldTemplate = _.template('<li><a parent="<%= table.id  %>" href="#" field-type="transpose"><%- table.field_name %></li>', {variable: 'table'});
     var $panel = $('#nav-panel');
     _.chain(table_list).groupBy('name').each(function (tables){
         _.forEach(tables, function(table){
-            $panel.append(categoryTemplate(table));
-            var $menu = $('.' + table.id + '-menu');
-            var field_index_id = 0;
-            _.chain(table_data[table.id]).groupBy('index_name').each(function (fields){
-                _.forEach(fields, function(field){
-                    field["parent"] = table["id"];
-                    field["index_id"] = field_index_id;
-                    field["source"] = table["source"];
-                    if(("notes" in field) && field["notes"].match(/[a-z]/i)){
-                        field["notes"] = (table["notes"] + " " + field["notes"]).trim() 
-                    }else{
-                        field["notes"] = table["notes"];
-                    }
-                    $menu.append(fieldTemplate(field));
-                    field_index_id = field_index_id + 1;
+            table["name_id"] = table.name.toLowerCase().replace(/\W+/g, '-');
+            var $menu = $('.' + table.name_id + '-menu');
+            if($menu.length == 0){
+                $panel.append(categoryTemplate(table));
+                $menu = $('.' + table.name_id + '-menu');
+            }
+            if(table["field_type"] == "linear"){
+                var field_index_id = 0;
+                _.chain(table_data[table.id]).groupBy('index_name').each(function (fields){
+                    _.forEach(fields, function(field){
+                        field["parent"] = table["id"];
+                        field["index_id"] = field_index_id;
+                        field["source"] = table["source"];
+                        if(("notes" in field) && field["notes"].match(/[a-z]/i)){
+                            field["notes"] = (table["notes"] + " " + field["notes"]).trim() 
+                        }else{
+                            field["notes"] = table["notes"];
+                        }
+                        if(!(("unit" in field) || field["unit"].match(/[a-z]/i))){
+                            field["unit"] = table["unit"];
+                        }
+                        $menu.append(linearFieldTemplate(field));
+                        field_index_id = field_index_id + 1;
+                    });
                 });
-            });
+            }else{
+                field_data = table_data[table.id];
+                table_data[table.id] = table;
+                $menu.append(transposeFieldTemplate(table));
+                table_data[table.id]["field_data"] = field_data; 
+                table_data[table.id]["index_name"] = table_data[table.id]["field_name"]; 
+            }
         });
     });
 
     $(".layer-toggle-menu > li").on("click", "a", function(e){
         e.preventDefault();
         if (!$(this).parent().hasClass('disabled')){
-            currentMetric=(typeof $(this).attr("index")==="undefined")?null:$(this).attr("index");
-            parentMetric=(typeof $(this).attr("parent")==="undefined")?null:$(this).attr("parent");
+            currentMetric = getMetric(this, "index");            
+            parentMetric = getMetric(this, "parent");
+            fieldType = getMetric(this, "field-type"); 
             //getSource(source_data,currentMetric);
-            changeDataViz(currentMetric, parentMetric, table_data);
+            changeDataViz(currentMetric, parentMetric, fieldType, table_data);
             $(".selected").removeClass("selected");
             $(this).parent().addClass("selected");
             $("#legend-panel").show();
             $("#details p.lead").show();
         }
     });
+}
+
+function getMetric(obj, metricName){
+    return (typeof $(obj).attr(metricName)==="undefined")?null:$(obj).attr(metricName); 
 }
 
 function toggleMenu() {
@@ -128,14 +153,24 @@ function removeNarrative() {
   $( "#narrative-row button" ).removeClass('active');
 }
 
-function changeDataViz(index_id, parent_id, table_data){
-    $("#content").html(""); 
-    selected_table_data = table_data[parent_id][index_id]; 
+function changeDataViz(index_id, parent_id, field_type, table_data){
+    $("#content").html("");
+    selected_table_data = {}; 
+    skip_keys = {"index_id":0, "index_name":0, "unit":0, "insights":0, "parent":0, "source":0, "viz_type":0, "alias":0, "notes":0}
+    if(field_type == "linear"){
+        selected_table_data = table_data[parent_id][index_id]; 
+        generateLinearChart(selected_table_data, skip_keys);
+    }else{
+        selected_table_data = table_data[parent_id];
+        generateTransposeChart(selected_table_data, skip_keys);
+    }
     $(".unit").html("Unit: " + selected_table_data["unit"]); 
     $("#visualized-measure").html(selected_table_data["index_name"]);
     $("#source-title").html("<b>Source:</b> " + selected_table_data["source"]);
     $("#notes-title").html("<b>Notes:</b> " + selected_table_data["notes"]);
-    skip_keys = {"index_id":0, "index_name":0, "unit":0, "insights":0, "parent":0, "source":0, "viz_type":0, "alias":0, "notes":0}
+}
+
+function generateLinearChart(selected_table_data, skip_keys){
     chart_data = []
     for (var key in selected_table_data){
         if(!(key in skip_keys) && (key.indexOf('%') === -1)){
@@ -154,7 +189,6 @@ function changeDataViz(index_id, parent_id, table_data){
                 }
             } 
             if(!(_.isEmpty(chart_data_row))){
-                console.log(chart_data_row);
                 chart_data.push(chart_data_row);
             }
         }
@@ -167,6 +201,34 @@ function changeDataViz(index_id, parent_id, table_data){
         index_name = selected_table_data["alias"]; 
     }  
     this[selected_table_data["viz_type"]](chart_data, index_name, selected_table_data["unit"]);
+}
+
+function generateTransposeChart(selected_table_data, skip_keys){
+    chart_data = [];
+    key_list = [];
+    key_hash = {};
+    _.forEach(selected_table_data["field_data"], function(field_data){
+        var chart_data_row = {};
+        chart_data_row = {"key": field_data["index_name"], "value":[]};
+        for(var key in field_data){
+            if(!(key in skip_keys)){
+                key_hash[key] = 0;
+                data_value = field_data[key];
+                if ((data_value.match(/[0-9]/))){
+                    if(data_value.indexOf('.') === -1){  
+                        chart_data_row["value"].push(parseInt(data_value, 10)); 
+                    }else{
+                        chart_data_row["value"].push(parseFloat(data_value, 10)); 
+                    }
+                }
+            }      
+        }
+        chart_data.push(chart_data_row);
+    });
+    for(var key in key_hash){
+        key_list.push(key);
+    }
+    this[selected_table_data["viz_type"]](chart_data, key_list, selected_table_data["unit"]);
 }
 
 function simple_bar(chart_data, index_name, unit){
@@ -392,3 +454,176 @@ function simple_bar_with_line(chart_data, index_name, unit){
         .text(index_name + " in " + unit.split("and")[1]);
 }
 
+function two_line(chart_data, key_list, unit){
+    var vertical_pad = 50;
+    var color1 = "#08519c"; 
+    var color2 = "#006d2c"; 
+    var margin = {top: 20, right: 40, bottom: 20, left: 40},
+        width = 800 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+    var xScale = d3.scale.ordinal()
+        .domain(d3.range(chart_data.length))
+        .rangeRoundBands([margin.left, width-margin.right], 0.5, 0.25); 
+    var yScale1 = d3.scale.linear()
+        .domain([0, d3.max(chart_data, function(d) {return d.value[0];})])
+        .range([height-vertical_pad, 0]);
+    var yScale2 = d3.scale.linear()
+        .domain([0, d3.max(chart_data, function(d) {return d.value[1];})])
+        .range([height-vertical_pad, 0]);
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .orient("bottom")
+        .innerTickSize(-height+vertical_pad)
+        .tickFormat(function (d) { return ''; });
+    var yAxis1 = d3.svg.axis()
+        .scale(yScale1)
+        .orient("left");
+    var yAxis2 = d3.svg.axis()
+        .scale(yScale2)
+        .orient("right");
+    var line1 = d3.svg.line()
+        .x(function(d, i) { return xScale(i) + xScale.rangeBand()/2 + margin.left})
+        .y(function(d) { return yScale1(d.value[0]) + vertical_pad/2;});
+    var line2 = d3.svg.line()
+        .x(function(d, i) { return xScale(i) + xScale.rangeBand()/2 + margin.left})
+        .y(function(d) { return yScale2(d.value[1]) + vertical_pad/2;});
+    var key = function(d) {
+            return d.key;
+    };
+    var svg = d3.select("#content")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom + vertical_pad);
+    
+    svg.append("path")
+        .datum(chart_data)
+        .attr("class", "line")
+        .attr("d", line1)
+        .attr("fill", "none")
+        .attr("stroke", color1)
+        .attr("stroke-opacity", 0.5)
+        .attr("stroke-width", 2)
+        .attr("stroke-linecap", "square")
+        .attr("stroke-dasharray", ("1, 10"))
+        .attr("shape-rendering", "optimizeSpeed");
+    
+    svg.append("path")
+        .datum(chart_data)
+        .attr("class", "line")
+        .attr("d", line2)
+        .attr("fill", "none")
+        .attr("stroke", color2)
+        .attr("stroke-opacity", 0.5)
+        .attr("stroke-width", 2)
+        .attr("stroke-linecap", "square")
+        .attr("stroke-dasharray", ("1, 10"))
+        .attr("shape-rendering", "optimizeSpeed");
+
+    svg.selectAll("circle.line1")
+        .data(chart_data)
+        .enter().append("svg:circle")
+        .attr("class", "line")
+        .style("fill", color1)
+        .attr("cx", line1.x())
+        .attr("cy", line1.y())
+        .attr("r", 5);
+   
+    svg.selectAll("circle.line2")
+        .data(chart_data)
+        .enter().append("svg:circle")
+        .attr("class", "line")
+        .style("fill", color2)
+        .attr("cx", line2.x())
+        .attr("cy", line2.y())
+        .attr("r", 5);
+
+    var texts = svg.selectAll("text")
+        .data(chart_data)
+        .enter();
+
+    texts.append("text")
+        .text(function(d) {
+            return d.value[0];
+        })
+    .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+            return xScale(i) + xScale.rangeBand()/2 + margin.left;
+        })
+    .attr("y", function(d) {
+        return yScale1(d.value[0]) + vertical_pad/4;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-weight", "bold")
+    .attr("font-size", "15px")
+    .attr("fill", color1);
+
+    texts.append("text")
+        .text(function(d) {
+            return d.value[1];
+        })
+    .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+            return xScale(i) + xScale.rangeBand()/2 + margin.left;
+        })
+    .attr("y", function(d) {
+        return yScale2(d.value[1]) + vertical_pad;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-weight", "bold")
+    .attr("font-size", "15px")
+    .attr("fill", color2);
+    
+    texts.append("text")
+        .text(function(d) {
+            return d.key;
+        })
+    .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+            return xScale(i) + xScale.rangeBand()/2 + margin.left;
+        })
+    .attr("y", function(d) {
+        return height;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-weight", "bold")
+    .attr("font-size", "12.5px")
+    .attr("fill", "Black");
+    
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate("  + margin.left +  "," + (height - vertical_pad/2) + ")")
+        .call(xAxis);
+    
+    svg.selectAll(".tick")
+        .style('opacity', 0.1);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(" + (2*margin.left)  + "," + vertical_pad/2 + ")")
+        .call(yAxis1);
+    
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", margin.left)
+        .attr("x", - height + vertical_pad)
+        .attr("dy", "1em")
+        .attr("fill", color1)
+        .attr("font-family", "sans-serif") 
+        .attr("font-size", "16px")
+        .text(key_list[0] + " in " + unit.split(",")[0]);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(" + width  + "," + vertical_pad/2 + ")")
+        .call(yAxis2);
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", width + margin.right)
+        .attr("x", - height + vertical_pad)
+        .attr("dy", "1em")
+        .attr("fill", color2)
+        .attr("font-family", "sans-serif") 
+        .attr("font-size", "16px")
+        .text(key_list[1] + " in " + unit.split(",")[1]);
+}
