@@ -303,7 +303,7 @@ span#visualized-metric {
   font-weight:bold;
 }
 
-#source {
+#insights {
   position:absolute;
   bottom:20px;
   left:0;
@@ -327,9 +327,9 @@ span#visualized-metric {
 
 div#legend-panel {
   position:absolute;
-  bottom: 90px;
+  bottom: -5px;
   left: 15px;
-  width: 200px;
+  width: 870px;
   display: none;
 }
 
@@ -494,7 +494,7 @@ small {
     font-size: 20px;
   }
 
-  #source {
+  #insights {
     left: auto;
     right: 0;
     top: auto;

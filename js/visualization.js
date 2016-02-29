@@ -51,6 +51,7 @@ function loadDatasets(){
         .defer(d3.csv, "data/urban_poverty.csv")
         .defer(d3.csv, "data/education.csv")
         .defer(d3.csv, "data/health.csv")
+        .defer(d3.csv, "data/agriculture.csv")
         .defer(d3.csv, "data/tax_gdp_buoyancy.csv")
         .defer(d3.csv, "data/annual_estimated_revenue_foregone.csv")
         .defer(d3.csv, "data/composition_and_structure_of_transfer_of_resources_to_states.csv")
@@ -58,13 +59,14 @@ function loadDatasets(){
         .defer(d3.csv, "data/social_sector_expenditure_as_share_of_aggregate_disbursements_by_states.csv")
         .await(populateTableData);
     
-    function populateTableData(error, table_list, ministry_of_tribal_affairs, ministry_of_social_justice_and_empowerment, ministry_of_rural_development, urban_poverty, education, health, tax_gdp_buoyancy, annual_estimated_revenue_foregone, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
+    function populateTableData(error, table_list, ministry_of_tribal_affairs, ministry_of_social_justice_and_empowerment, ministry_of_rural_development, urban_poverty, education, health, agriculture, tax_gdp_buoyancy, annual_estimated_revenue_foregone, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
         table_data["ministry_of_tribal_affairs"] = ministry_of_tribal_affairs;
         table_data["ministry_of_social_justice_and_empowerment"] = ministry_of_social_justice_and_empowerment;
         table_data["ministry_of_rural_development"] = ministry_of_rural_development; 
         table_data["urban_poverty"] = urban_poverty; 
         table_data["education"] = education;  
         table_data["health"] = health;  
+        table_data["agriculture"] = agriculture;  
         table_data["tax_gdp_buoyancy"] = tax_gdp_buoyancy;  
         table_data["annual_estimated_revenue_foregone"] = annual_estimated_revenue_foregone;  
         table_data["composition_and_structure_of_transfer_of_resources_to_states"] = composition_and_structure_of_transfer_of_resources_to_states;
@@ -155,6 +157,7 @@ function removeNarrative() {
 
 function changeDataViz(index_id, parent_id, field_type, table_data){
     $("#content").html("");
+    $("#legend-panel").html("");
     selected_table_data = {}; 
     skip_keys = {"index_id":0, "index_name":0, "unit":0, "insights":0, "parent":0, "source":0, "viz_type":0, "alias":0, "notes":0}
     if(field_type == "linear"){
@@ -167,7 +170,13 @@ function changeDataViz(index_id, parent_id, field_type, table_data){
     $(".unit").html("Unit: " + selected_table_data["unit"]); 
     $("#visualized-measure").html(selected_table_data["index_name"]);
     $("#source-title").html("<b>Source:</b> " + selected_table_data["source"]);
+    if(!("notes" in selected_table_data) && selected_table_data["notes"].match(/[a-z]/i)){
+        selected_table_data["notes"] = "Not Applicable";
+    }
     $("#notes-title").html("<b>Notes:</b> " + selected_table_data["notes"]);
+    if(("insights" in selected_table_data) && selected_table_data["insights"].match(/[a-z]/i)){
+        $("#legend-panel").html("<h3 class='panel-title'>Budget Insights</h3><div class='panel-body'>" + selected_table_data["insights"]  + "</div>");
+    }
 }
 
 function generateLinearChart(selected_table_data, skip_keys){
