@@ -93,6 +93,22 @@ p {
   padding-top: 60px;
 }
 
+#desc-heading{
+  margin-top: -40px;
+  text-align: left;  
+  padding-left: 20px;
+}
+
+#description{
+    padding-top: 15px; 
+    padding-right: 30px;
+    padding-left: 20px;
+}
+#description p{
+    font-size: 1.4em;
+    line-height: 2em!important;
+    text-align: justify;
+}
 
 .menu-toggle {
   cursor: pointer;

@@ -1,3 +1,8 @@
-index_name,alias,unit,viz_type,2012-13,2013-14,2014-15,2015-16(RE),2016-17(BE)
-Ministry of Housing and Urban Poverty Alleviation(MoHUPA),MoHUPA,Rs crore,simple_bar,933.2,1084,6008.6,3413.4,5634.5
-Ministry of Urban Development(MoUD),MoUD,Rs crore,simple_bar,8465,7296.7,17628.6,11013,16832.2
+index_name,viz_type,2013-14,2014-15,2015-16(BE),2015-16(RE),2016-17(BE),alias,unit,notes
+Ministry of Housing and Urban Poverty Alleviation(MoHUPA),simple_bar,1084,2728,5635,1961,5411,MoHUPA,Rs crore,
+Pradhan Mantri Awas Yojana (Urban),simple_bar,,1892,4618,1415,5075,,Rs crore,"Includes allocation for RAY, IHSDP, BSUP, Housing for all (Urban) / Sardar Patel Urban Housing Scheme."
+National Urban Livelihoods Mission (Urban),simple_bar,,703.1,510,261.3,325,,Rs crore,
+Budget Outlay for Ministry of Urban Development(MoUD),simple_bar,10364,13254,19217,18340,24523,MoUD,Rs crore,
+Mission for development of 100 smart cities,simple_bar,,,2020,820,3205,,Rs crore,
+Atal Mission for Rejuvenation for Urban Transformation (AMRUT),simple_bar,,,3919,2643.7,4090.5,,Rs crore,
+National Heritage City Development and Augmentation Yojana (HRIDAY),simple_bar,,0.9,200,200,200,,Rs crore,
