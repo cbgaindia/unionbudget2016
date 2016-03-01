@@ -54,6 +54,7 @@ function loadDatasets(){
         .defer(d3.csv, "data/education.csv")
         .defer(d3.csv, "data/health.csv")
         .defer(d3.csv, "data/drinking_water_and_sanitation.csv")
+        .defer(d3.csv, "data/ministry_of_rural_development.csv")
         .defer(d3.csv, "data/agriculture.csv")
         .defer(d3.csv, "data/food_security.csv")
         .defer(d3.csv, "data/nutrition.csv")
@@ -63,13 +64,14 @@ function loadDatasets(){
         .defer(d3.csv, "data/dalits.csv")
         .defer(d3.csv, "data/adivasis.csv")
         .defer(d3.csv, "data/religious_minorities.csv")
+        .defer(d3.csv, "data/social_security.csv")
         .defer(d3.csv, "data/urban_poverty.csv")
         .defer(d3.csv, "data/disability.csv")
         .defer(d3.csv, "data/share_of_expenditure_by_moa.csv")
         .defer(d3.csv, "data/share_of_food_subsidy_allocation.csv")
         .await(populateTableData);
     
-    function populateTableData(error, table_list, overview, transfer_of_resources_to_states, social_sector_allocations_and_priorities, tax_gdp_buoyancy, annual_estimated_revenue_foregone, price_rise, education, health, drinking_water_and_sanitation, agriculture, food_security, nutrition, climate_change, women, children, dalits, adivasis, religious_minorities, urban_poverty, disability, share_of_expenditure_by_moa, share_of_food_subsidy_allocation){
+    function populateTableData(error, table_list, overview, transfer_of_resources_to_states, social_sector_allocations_and_priorities, tax_gdp_buoyancy, annual_estimated_revenue_foregone, price_rise, education, health, drinking_water_and_sanitation, ministry_of_rural_development, agriculture, food_security, nutrition, climate_change, women, children, dalits, adivasis, religious_minorities, social_security, urban_poverty, disability, share_of_expenditure_by_moa, share_of_food_subsidy_allocation){
         table_data["overview"] = overview;  
         table_data["transfer_of_resources_to_states"] = transfer_of_resources_to_states;  
         table_data["social_sector_allocations_and_priorities"] = social_sector_allocations_and_priorities;  
@@ -79,6 +81,7 @@ function loadDatasets(){
         table_data["education"] = education;  
         table_data["health"] = health;  
         table_data["drinking_water_and_sanitation"] = drinking_water_and_sanitation;  
+        table_data["ministry_of_rural_development"] = ministry_of_rural_development; 
         table_data["agriculture"] = agriculture;  
         table_data["food_security"] = food_security;  
         table_data["nutrition"] = nutrition;   
@@ -88,6 +91,7 @@ function loadDatasets(){
         table_data["dalits"] = dalits;   
         table_data["adivasis"] = adivasis;   
         table_data["religious_minorities"] = religious_minorities;   
+        table_data["social_security"] = social_security; 
         table_data["urban_poverty"] = urban_poverty; 
         table_data["disability"] = disability; 
         table_data["share_of_expenditure_by_moa"] = share_of_expenditure_by_moa;  
