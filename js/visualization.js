@@ -45,33 +45,39 @@ function loadDatasets(){
     var table_data = {};
     queue()
         .defer(d3.csv, "data/table_list.csv")
+        .defer(d3.csv, "data/overview.csv") 
+        .defer(d3.csv, "data/transfer_of_resources_to_states.csv") 
+        .defer(d3.csv, "data/tax_gdp_buoyancy.csv")
+        .defer(d3.csv, "data/annual_estimated_revenue_foregone.csv")
+        .defer(d3.csv, "data/price_rise.csv") 
+        .defer(d3.csv, "data/education.csv")
+        .defer(d3.csv, "data/health.csv")
+        .defer(d3.csv, "data/drinking_water_and_sanitation.csv")
         .defer(d3.csv, "data/ministry_of_tribal_affairs.csv")
         .defer(d3.csv, "data/ministry_of_social_justice_and_empowerment.csv")
         .defer(d3.csv, "data/ministry_of_rural_development.csv")
         .defer(d3.csv, "data/urban_poverty.csv")
-        .defer(d3.csv, "data/education.csv")
-        .defer(d3.csv, "data/health.csv")
+        .defer(d3.csv, "data/share_of_expenditure_by_moa.csv")
         .defer(d3.csv, "data/agriculture.csv")
-        .defer(d3.csv, "data/tax_gdp_buoyancy.csv")
-        .defer(d3.csv, "data/annual_estimated_revenue_foregone.csv")
-        .defer(d3.csv, "data/composition_and_structure_of_transfer_of_resources_to_states.csv")
-        .defer(d3.csv, "data/social_sector_expenditures_by_union_government.csv")
-        .defer(d3.csv, "data/social_sector_expenditure_as_share_of_aggregate_disbursements_by_states.csv")
+        .defer(d3.csv, "data/share_of_food_subsidy_allocation.csv")
         .await(populateTableData);
     
-    function populateTableData(error, table_list, ministry_of_tribal_affairs, ministry_of_social_justice_and_empowerment, ministry_of_rural_development, urban_poverty, education, health, agriculture, tax_gdp_buoyancy, annual_estimated_revenue_foregone, composition_and_structure_of_transfer_of_resources_to_states, social_sector_expenditures_by_union_government, social_sector_expenditure_as_share_of_aggregate_disbursements_by_states){
+    function populateTableData(error, table_list, overview, transfer_of_resources_to_states, tax_gdp_buoyancy, annual_estimated_revenue_foregone, price_rise, education, health, drinking_water_and_sanitation, ministry_of_tribal_affairs, ministry_of_social_justice_and_empowerment, ministry_of_rural_development, urban_poverty, share_of_expenditure_by_moa, agriculture, share_of_food_subsidy_allocation){
+        table_data["overview"] = overview;  
+        table_data["transfer_of_resources_to_states"] = transfer_of_resources_to_states;  
+        table_data["tax_gdp_buoyancy"] = tax_gdp_buoyancy;  
+        table_data["annual_estimated_revenue_foregone"] = annual_estimated_revenue_foregone;  
+        table_data["price_rise"] = price_rise;  
+        table_data["education"] = education;  
+        table_data["health"] = health;  
+        table_data["drinking_water_and_sanitation"] = drinking_water_and_sanitation;  
         table_data["ministry_of_tribal_affairs"] = ministry_of_tribal_affairs;
         table_data["ministry_of_social_justice_and_empowerment"] = ministry_of_social_justice_and_empowerment;
         table_data["ministry_of_rural_development"] = ministry_of_rural_development; 
         table_data["urban_poverty"] = urban_poverty; 
-        table_data["education"] = education;  
-        table_data["health"] = health;  
+        table_data["share_of_expenditure_by_moa"] = share_of_expenditure_by_moa;  
         table_data["agriculture"] = agriculture;  
-        table_data["tax_gdp_buoyancy"] = tax_gdp_buoyancy;  
-        table_data["annual_estimated_revenue_foregone"] = annual_estimated_revenue_foregone;  
-        table_data["composition_and_structure_of_transfer_of_resources_to_states"] = composition_and_structure_of_transfer_of_resources_to_states;
-        table_data["social_sector_expenditures_by_union_government"] = social_sector_expenditures_by_union_government;
-        table_data["social_sector_expenditure_as_share_of_aggregate_disbursements_by_states"] = social_sector_expenditure_as_share_of_aggregate_disbursements_by_states;
+        table_data["share_of_food_subsidy_allocation"] = share_of_food_subsidy_allocation;  
         populateNavPanel(table_list, table_data);
     }
     function drawViz(table_list, table_data){
@@ -97,7 +103,6 @@ function populateNavPanel(table_list, table_data) {
                     _.forEach(fields, function(field){
                         field["parent"] = table["id"];
                         field["index_id"] = field_index_id;
-                        field["source"] = table["source"];
                         if(("notes" in field) && field["notes"].match(/[a-z]/i)){
                             field["notes"] = (table["notes"] + " " + field["notes"]).trim() 
                         }else{
@@ -105,6 +110,9 @@ function populateNavPanel(table_list, table_data) {
                         }
                         if(!(("unit" in field) || field["unit"].match(/[a-z]/i))){
                             field["unit"] = table["unit"];
+                        }
+                        if(!("source" in field) || !field["source"].match(/[a-z]/i)){
+                            field["source"] = table["source"];
                         }
                         $menu.append(linearFieldTemplate(field));
                         field_index_id = field_index_id + 1;
@@ -240,6 +248,32 @@ function generateTransposeChart(selected_table_data, skip_keys){
     this[selected_table_data["viz_type"]](chart_data, key_list, selected_table_data["unit"]);
 }
 
+function wrap(text, width){
+    text.each(function(){
+        var text = d3.select(this),
+        words = text.text().split("-").reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1, // ems
+        x = text.attr("x"), 
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+        while (word = words.pop()) {
+            line.push(word);
+            tspan.text(line.join("-"));
+            if (tspan.node().getComputedTextLength() > width) {
+                line.pop();
+                tspan.text(line.join("-"));
+                line = [word];
+                tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text("-" + word);
+            }
+        }
+    });
+}
+
+
 function simple_bar(chart_data, index_name, unit){
     var vertical_pad = 50; 
     var margin = {top: 20, right: 0, bottom: 20, left: 0},
@@ -309,6 +343,79 @@ function simple_bar(chart_data, index_name, unit){
     })
     .attr("font-family", "sans-serif") 
     .attr("font-size", "14px")
+    .attr("fill", "Black");
+}
+
+function horizontal_bar(chart_data, index_name, unit){
+    var horizontal_pad = 175; 
+    var legend_space = 50;
+    var margin = {top: 20, right: 0, bottom: 20, left: 0},
+        width = 700 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+    var xScale = d3.scale.linear()
+        .domain([0, d3.max(chart_data, function(d) {return d.value;})])
+        .range([0, width-horizontal_pad-legend_space]); 
+    var yScale = d3.scale.ordinal()
+        .domain(d3.range(chart_data.length))
+        .rangeRoundBands([0, height], 0.5, 0.25);
+    var key = function(d) {
+            return d.key;
+    };
+    var svg = d3.select("#content")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+    svg.selectAll("rect")
+        .data(chart_data, key)
+        .enter()
+        .append("rect")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .attr("x", function(d, i) {
+            return horizontal_pad;
+        })
+    .attr("y", function(d, i) {
+        return yScale(i);
+    })
+    .attr("height", yScale.rangeBand())
+        .attr("width", function(d) {
+            return xScale(d.value);
+        })
+    .attr("fill", function(d) {
+        return "#08519c";
+    })
+
+    var texts = svg.selectAll("text")
+        .data(chart_data)
+        .enter();
+
+    texts.append("text")
+        .text(function(d) {
+            return d.value;
+        })
+    .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+            return horizontal_pad + 20 + xScale(d.value);
+        })
+    .attr("y", function(d, i) {
+        return yScale(i) + yScale.rangeBand() - (2*yScale.rangeBand()/chart_data.length) + margin.top;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-size", "18px")
+    .attr("fill", "black");
+    
+    texts.append("text")
+        .text(function(d) {
+            return d.key;
+        })
+    .attr("text-anchor", "end")
+        .attr("x", function(d, i) {
+            return horizontal_pad - 10;
+        })
+    .attr("y", function(d, i) {
+        return yScale(i) + yScale.rangeBand() - (2*yScale.rangeBand()/chart_data.length) + margin.top;
+    })
+    .attr("font-family", "sans-serif") 
+    .attr("font-size", "16px")
     .attr("fill", "Black");
 }
 
@@ -593,11 +700,15 @@ function two_line(chart_data, key_list, unit){
     .attr("y", function(d) {
         return height;
     })
+    .attr("font-size", "12.5px")
+    .attr("dy", "-1em")
+    .call(wrap, xScale.rangeBand())
     .attr("font-family", "sans-serif") 
     .attr("font-weight", "bold")
-    .attr("font-size", "12.5px")
     .attr("fill", "Black");
-    
+
+    console.log(xScale.rangeBand());
+
     svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate("  + margin.left +  "," + (height - vertical_pad/2) + ")")
@@ -613,7 +724,7 @@ function two_line(chart_data, key_list, unit){
     
     svg.append("text")
         .attr("transform", "rotate(-90)")
-        .attr("y", margin.left)
+        .attr("y", margin.left/2)
         .attr("x", - height + vertical_pad)
         .attr("dy", "1em")
         .attr("fill", color1)
