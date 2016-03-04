@@ -540,7 +540,7 @@ function simple_bar_with_line(chart_data, index_name, unit){
     })
     .attr("font-family", "sans-serif") 
     .attr("font-size", "16px")
-    .attr("fill", "Black");
+    .attr("fill", "#74c476");
     
     texts.append("text")
         .text(function(d) {
@@ -724,8 +724,6 @@ function two_line(chart_data, key_list, unit){
     .attr("font-family", "sans-serif") 
     .attr("font-weight", "bold")
     .attr("fill", "Black");
-
-    console.log(xScale.rangeBand());
 
     svg.append("g")
         .attr("class", "x axis")
