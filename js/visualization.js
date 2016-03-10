@@ -294,7 +294,6 @@ function wrap(text, width){
 
 function simple_bar(chart_data, index_name, unit){
     var vertical_pad = 50; 
-    console.log($("#content").width());
     var margin = {top: 20, right: 0, bottom: 20, left: 0},
         width = $("#content").width() - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
@@ -369,7 +368,7 @@ function horizontal_bar(chart_data, index_name, unit){
     var horizontal_pad = 175; 
     var legend_space = 50;
     var margin = {top: 20, right: 0, bottom: 20, left: 0},
-        width = 700 - margin.left - margin.right,
+        width = $("#content").width() - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
     var xScale = d3.scale.linear()
         .domain([0, d3.max(chart_data, function(d) {return d.value;})])
@@ -441,7 +440,7 @@ function horizontal_bar(chart_data, index_name, unit){
 function simple_bar_with_line(chart_data, index_name, unit){
     var vertical_pad = 50; 
     var margin = {top: 20, right: 40, bottom: 20, left: 40},
-        width = 800 - margin.left - margin.right,
+        width = $("#content").width() - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
     var xScale = d3.scale.ordinal()
         .domain(d3.range(chart_data.length))
@@ -594,7 +593,7 @@ function two_line(chart_data, key_list, unit){
     var color1 = "#08519c"; 
     var color2 = "#006d2c"; 
     var margin = {top: 20, right: 40, bottom: 20, left: 40},
-        width = 800 - margin.left - margin.right,
+        width = $("#content").width() - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
     var xScale = d3.scale.ordinal()
         .domain(d3.range(chart_data.length))
