@@ -57,7 +57,8 @@ p {
 }
 #nav-panel {
   background-color: #f8f8f8;
-  width: 300px;
+  width: 20%;
+  max-width: 300px;
   top: 0px;
   bottom: 0px;
   left: 0px;
@@ -79,14 +80,25 @@ p {
   color: #000;
 }
 #main-container {
+  margin: 0% 0% 0% 4.5%;
   top: 0px;
-  left: 0px;
-  padding-right: 620px;
+  left: 20%;
+  padding-right: 0;
   background-color: #FFF;
-  width: 100%;
+  max-width: 900px;
+  width: 50%;
+  /*
+  -webkit-box-shadow: 0px 0px 15px #ccc;
+  -moz-box-shadow: 0px 0px 15px #ccc;
+  box-shadow: 0px 0px 15px #ccc;
+  */
+}
+
+#centre-box{
   -webkit-box-shadow: 0px 0px 15px #CCC;
   -moz-box-shadow: 0px 0px 15px #CCC;
   box-shadow: 0px 0px 15px #CCC;
+
 }
 
 #content {
@@ -105,8 +117,8 @@ p {
     padding-left: 20px;
 }
 #description p{
-    font-size: 1.4em;
-    line-height: 2em!important;
+    font-size: 130%;
+    line-height: 150%;
     text-align: justify;
 }
 
@@ -230,11 +242,13 @@ circle.poi:hover {
 }
 
 #details {
-  position:absolute;
-  width:300px;
+  margin: 0px;
+  position:relative;
+  float: right;
+  max-width: 300px;
+  width:20%;
   top:20px;
   right:20px;
-  z-index: 1;
 }
 
 #details p.lead {
@@ -343,9 +357,9 @@ span#visualized-metric {
 
 div#legend-panel {
   position:absolute;
-  bottom: -5px;
-  left: 15px;
-  width: 870px;
+  bottom: 15px;
+  width: 96%;
+  margin: auto;
   display: none;
 }
 
@@ -459,7 +473,7 @@ small {
   }
 
   #details {
-    position: relative;
+    position:absolutee;
     width: auto;
     top:auto;
     right:auto;
