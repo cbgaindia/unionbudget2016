@@ -294,8 +294,9 @@ function wrap(text, width){
 
 function simple_bar(chart_data, index_name, unit){
     var vertical_pad = 50; 
+    console.log($("#content").width());
     var margin = {top: 20, right: 0, bottom: 20, left: 0},
-        width = 700 - margin.left - margin.right,
+        width = $("#content").width() - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
     var xScale = d3.scale.ordinal()
         .domain(d3.range(chart_data.length))
@@ -308,7 +309,7 @@ function simple_bar(chart_data, index_name, unit){
     };
     var svg = d3.select("#content")
         .append("svg")
-        .attr("width", width + margin.left + margin.right)
+        .attr("width", width)
         .attr("height", height + margin.top + margin.bottom + vertical_pad);
     svg.selectAll("rect")
         .data(chart_data, key)
